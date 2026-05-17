@@ -117,64 +117,153 @@ export function IncidentQueueList({ incidents, onAnalyze }: { incidents: Inciden
 
 export function NetworkTopology({ activeAlert }: { activeAlert?: boolean }) {
   const nodes = [
-    { id: 'gw', label: 'GATEWAY', x: 50, y: 15, status: 'stable' },
-    { id: 'db', label: 'VAULT_DB', x: 20, y: 50, status: activeAlert ? 'warning' : 'stable' },
-    { id: 'app', label: 'APP_CORE', x: 50, y: 50, status: activeAlert ? 'critical' : 'stable' },
-    { id: 'cache', label: 'CACHE_H0', x: 80, y: 50, status: 'stable' },
-    { id: 'auth', label: 'AUTH_0', x: 50, y: 85, status: 'stable' },
-  ];
+    { id: 'gw', label: 'GATEWAY', x: 50, y: 15, status: 'stable', icon: 'zap' },
+    { id: 'db', label: 'VAULT_DB', x: 20, y: 50, status: activeAlert ? 'warning' : 'stable', icon: 'database' },
+    { id: 'app', label: 'APP_CORE', x: 50, y: 50, status: activeAlert ? 'critical' : 'stable', icon: 'shield' },
+    { id: 'cache', label: 'CACHE_H0', x: 80, y: 50, status: 'stable', icon: 'zap' },
+    { id: 'auth', label: 'AUTH_0', x: 50, y: 85, status: 'stable', icon: 'lock' },
+  ].filter(n => n && n.x !== undefined && n.y !== undefined);
 
   const connections = [
     ['gw', 'app'], ['app', 'db'], ['app', 'cache'], ['app', 'auth']
   ];
 
   return (
-    <div className="relative w-full h-[180px] bg-black/40 border border-white/5 rounded-lg overflow-hidden flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(37,99,235,0.05),transparent)] pointer-events-none" />
-      <svg viewBox="0 0 100 100" className="w-full h-full opacity-60">
+    <div className="relative w-full h-[220px] bg-slate-950/40 border border-white/5 rounded-xl overflow-hidden flex items-center justify-center p-6 group">
+      {/* Background Grid/Scan Effect */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:20px_20px]" />
+        <motion.div 
+          animate={{ y: ['0%', '100%', '0%'] }} 
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 left-0 w-full h-1 bg-blue-500/10 blur-[2px]"
+        />
+      </div>
+
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(37,99,235,0.08),transparent)] pointer-events-none" />
+      
+      <svg viewBox="0 0 100 100" className="w-full h-full relative z-10 drop-shadow-[0_0_8px_rgba(37,99,235,0.2)]">
+        <defs>
+          <radialGradient id="nodeGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(59, 130, 246, 0.4)" />
+            <stop offset="100%" stopColor="rgba(59, 130, 246, 0)" />
+          </radialGradient>
+          <filter id="glow">
+             <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+             <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+             </feMerge>
+          </filter>
+        </defs>
+
         {/* Connection Lines */}
         {connections.map(([fromId, toId], i) => {
-          const from = nodes.find(n => n.id === fromId)!;
-          const to = nodes.find(n => n.id === toId)!;
+          const from = nodes.find(n => n.id === fromId);
+          const to = nodes.find(n => n.id === toId);
+          if (!from || !to || from.x === undefined || from.y === undefined || to.x === undefined || to.y === undefined) return null;
+          const isStressed = activeAlert && (from.id === 'app' || to.id === 'app' || from.id === 'db' || to.id === 'db');
+          
           return (
-            <motion.line
-              key={`conn-${i}`}
-              x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-              stroke={activeAlert && (from.id === 'app' || to.id === 'app') ? '#ef4444' : '#1e293b'}
-              strokeWidth="0.5"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1 }}
-            />
+            <g key={`conn-group-${i}`}>
+              <motion.line
+                x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                stroke={isStressed ? '#ef4444' : '#1e293b'}
+                strokeWidth={isStressed ? "0.8" : "0.5"}
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: isStressed ? 0.6 : 0.4 }}
+                transition={{ duration: 1.5, delay: i * 0.2 }}
+              />
+              {/* Data Particles */}
+              <motion.circle
+                r="0.8"
+                fill={isStressed ? '#f87171' : '#60a5fa'}
+                filter="url(#glow)"
+                animate={{
+                  cx: [from.x, to.x],
+                  cy: [from.y, to.y],
+                  opacity: [0, 1, 0]
+                }}
+                transition={{
+                  duration: 2 + Math.random(),
+                  repeat: Infinity,
+                  ease: "linear",
+                  delay: Math.random() * 2
+                }}
+              />
+            </g>
           );
         })}
         
         {/* Nodes */}
-        {nodes.map((node) => (
-          <g key={node.id}>
-            <motion.circle
-              cx={node.x} cy={node.y} r="3"
-              fill={node.status === 'critical' ? '#ef4444' : node.status === 'warning' ? '#f59e0b' : '#3b82f6'}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-            />
-            {node.status !== 'stable' && (
-               <motion.circle
-                cx={node.x} cy={node.y} r="5"
-                stroke={node.status === 'critical' ? '#ef4444' : '#f59e0b'}
-                strokeWidth="0.5"
-                fill="none"
-                animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
+        {nodes.map((node) => {
+          if (!node || node.x === undefined || node.y === undefined) return null;
+          const isCritical = node.status === 'critical';
+          const isWarning = node.status === 'warning';
+          
+          return (
+            <g key={node.id} className="cursor-pointer">
+              {/* Outer Glow */}
+              <motion.circle
+                cx={node.x} cy={node.y} r="6"
+                fill="url(#nodeGradient)"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ repeat: Infinity, duration: 3, delay: Math.random() * 2 }}
               />
-            )}
-            <text x={node.x} y={node.y + 7} textAnchor="middle" className="text-[3px] font-mono fill-slate-500 uppercase tracking-widest">{node.label}</text>
-          </g>
-        ))}
+              
+              {/* Alert Pulse */}
+              {(isCritical || isWarning) && (
+                <motion.circle
+                  cx={node.x} cy={node.y} r="8"
+                  stroke={isCritical ? '#ef4444' : '#f59e0b'}
+                  strokeWidth="0.3"
+                  fill="none"
+                  animate={{ scale: [1, 2.5], opacity: [0.6, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                />
+              )}
+
+              {/* Node Body */}
+              <motion.circle
+                cx={node.x} cy={node.y} r="3.5"
+                fill={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#0f172a'}
+                stroke={isCritical ? '#fca5a5' : isWarning ? '#fbbf24' : '#3b82f6'}
+                strokeWidth="0.8"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                whileHover={{ scale: 1.2 }}
+              />
+
+              {/* Node Icon/Shape Details */}
+              <path 
+                d={`M${node.x-1} ${node.y-1} L${node.x+1} ${node.y+1} M${node.x+1} ${node.y-1} L${node.x-1} ${node.y+1}`} 
+                stroke={isCritical || isWarning ? "white" : "#60a5fa"} 
+                strokeWidth="0.3" 
+                strokeLinecap="round" 
+              />
+
+              <text 
+                x={node.x} y={node.y + 9} 
+                textAnchor="middle" 
+                className={`text-[3.5px] font-mono font-bold uppercase tracking-[0.1em] ${isCritical ? 'fill-red-400' : isWarning ? 'fill-orange-400' : 'fill-slate-500'}`}
+              >
+                {node.label}
+              </text>
+            </g>
+          );
+        })}
       </svg>
-      <div className="absolute top-2 left-2 flex flex-col gap-0.5">
-          <span className="text-[6px] font-mono text-slate-500 font-bold uppercase tracking-widest">Topology: Virtual_Cluster_09</span>
-          <span className="text-[6px] font-mono text-blue-500/50 uppercase">Neural Link: SYNCED</span>
+      <div className="absolute top-3 left-3 flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            <span className="text-[7px] font-mono text-slate-400 font-bold uppercase tracking-[0.2em]">Topology: Virtual_Cluster_09</span>
+          </div>
+          <span className="text-[6px] font-mono text-blue-500/60 uppercase ml-3.5 tracking-widest">Neural Link: SYNCED</span>
+      </div>
+
+      <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-black/40 border border-white/5 rounded-md">
+         <div className="w-1 h-1 bg-green-500 rounded-full" />
+         <span className="text-[6px] font-mono text-slate-500 uppercase tracking-tighter">Status: Nominal_Operations</span>
       </div>
     </div>
   );

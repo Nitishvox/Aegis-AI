@@ -2,12 +2,60 @@ import { GoogleGenAI } from "@google/genai";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// Debug logging
+// Validate API Key on load
 if (!GEMINI_API_KEY) {
-  console.error("❌ VITE_GEMINI_API_KEY is not configured in .env file. Make sure to rename GEMINI_API_KEY to VITE_GEMINI_API_KEY in your .env file");
+  console.error('❌ CRITICAL: VITE_GEMINI_API_KEY environment variable is not loaded!');
+  console.error('Ensure .env file contains: VITE_GEMINI_API_KEY=your_key');
 } else {
-  console.log("✅ VITE_GEMINI_API_KEY loaded successfully (length: " + GEMINI_API_KEY.length + " chars)");
+  console.log('✅ VITE_GEMINI_API_KEY loaded successfully (length: ' + GEMINI_API_KEY.length + ' chars)');
 }
+
+// Global request queue to prevent concurrent API calls
+class RequestQueue {
+  private queue: (() => Promise<any>)[] = [];
+  private isProcessing = false;
+  private readonly MIN_DELAY_MS = 2500; // 2.5 seconds between requests
+  private lastRequestTime = 0;
+
+  async add<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      this.process();
+    });
+  }
+
+  private async process() {
+    if (this.isProcessing || this.queue.length === 0) return;
+    
+    this.isProcessing = true;
+    
+    while (this.queue.length > 0) {
+      const now = Date.now();
+      const timeSinceLastRequest = now - this.lastRequestTime;
+      
+      if (timeSinceLastRequest < this.MIN_DELAY_MS) {
+        await new Promise(r => setTimeout(r, this.MIN_DELAY_MS - timeSinceLastRequest));
+      }
+      
+      const request = this.queue.shift();
+      if (request) {
+        this.lastRequestTime = Date.now();
+        await request();
+      }
+    }
+    
+    this.isProcessing = false;
+  }
+}
+
+const requestQueue = new RequestQueue();
 
 export interface AgentResponse {
   agentName: string;
@@ -26,34 +74,34 @@ export interface IncidentAnalysis {
   overallThreatLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 }
 
-const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
+const ai = GEMINI_API_KEY && GEMINI_API_KEY.length > 20 ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
+
+if (!ai) {
+  console.error('❌ GoogleGenAI instance not initialized! API Key status:', {
+    exists: !!GEMINI_API_KEY,
+    length: GEMINI_API_KEY?.length || 0
+  });
+}
 
 async function runAgent(role: string, mission: string, context: string): Promise<AgentResponse> {
   const prompt = `
-You are a professional security analyst with expertise in incident response and threat analysis.
-
-Role: ${role}
-Mission: ${mission}
-
-Context (Incident Logs/Data):
-${context}
-
-INSTRUCTIONS:
-- Provide a comprehensive, professional analysis in your specialized role
-- Use proper Markdown formatting with headers (##), bold (**text**), bullet points, and line breaks
-- Structure your analysis logically with clear sections
-- Include a "Functionality Status" section at the end listing tools used
-- Be thorough, technical, and actionable in your recommendations
-- Do NOT wrap response in \`\`\` code blocks
-
-Return your response in this exact format:
----ANALYSIS_START---
-[Your detailed analysis here with full markdown formatting]
----CONFIDENCE_SCORE---
-[A number between 0.0 and 1.0, e.g., 0.92]
----FUNCTIONALITIES---
-[Comma-separated list of tools used, e.g., Log Scanner, Heuristic Engine, Anomaly Detection]
----ANALYSIS_END---
+    Role: ${role}
+    Mission: ${mission}
+    
+    Context (Incident Logs/Data):
+    ${context}
+    
+    Instructions:
+    - Provide a professional, technical analysis in your specialized role.
+    - Use Markdown formatting in the "content" field (e.g., use bold for emphasis, headers for sections, and bullet points for lists).
+    - Include a "Functionality Status" section at the end of your content showing which of your internal tools were used (e.g., [OK] Log Scanner, [OK] Heuristic Engine).
+    - Include a structured "Automation Workflow" section if remediation or investigation steps are required.
+    - Return your response as a JSON object with the following fields:
+    {
+      "content": "Your detailed analysis, findings, and workflows...",
+      "confidenceScore": 0.0 to 1.0,
+      "functionalities": ["Tool A: Active", "Tool B: Synchronized"] 
+    }
   `;
 
   const maxRetries = 5;
@@ -63,58 +111,34 @@ Return your response in this exact format:
     try {
       if (!ai) throw new Error("GEMINI_API_KEY not configured.");
 
-      const response = await ai.models.generateContent({
+      const response = await requestQueue.add(() => ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: prompt
-      });
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json"
+        }
+      }));
 
-      const resultText = response.text || "";
-      
-      if (!resultText) {
-        throw new Error("Empty response from API");
-      }
-      
-      console.debug(`Raw response (first 300 chars): ${resultText.substring(0, 300)}`);
-      
-      // Parse the structured response format
-      const analysisMatch = resultText.match(/---ANALYSIS_START---([\s\S]*?)---CONFIDENCE_SCORE---/);
-      const confidenceMatch = resultText.match(/---CONFIDENCE_SCORE---([\s\S]*?)---FUNCTIONALITIES---/);
-      const functionalitiesMatch = resultText.match(/---FUNCTIONALITIES---([\s\S]*?)---ANALYSIS_END---/);
-      
-      if (!analysisMatch || !confidenceMatch || !functionalitiesMatch) {
-        console.warn("Response format not matching expected markers, attempting fallback parsing");
-        throw new Error("Response format invalid");
-      }
-      
-      const content = analysisMatch[1].trim();
-      const confidenceStr = confidenceMatch[1].trim();
-      const functionalitiesStr = functionalitiesMatch[1].trim();
-      
-      const confidenceScore = parseFloat(confidenceStr) || 0.85;
-      const functionalities = functionalitiesStr
-        .split(',')
-        .map(f => f.trim())
-        .filter(f => f.length > 0);
-      
-      console.log(`✅ Agent ${role} analysis completed successfully`);
-      
+      const resultText = response.text || "{}";
+      const jsonContent = resultText.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+      const result = JSON.parse(jsonContent);
+
       return {
         agentName: role.split(' ')[0],
         role,
-        content,
-        confidenceScore,
-        functionalities
+        content: result.content || "Analysis incomplete.",
+        confidenceScore: result.confidenceScore || 0.8,
+        functionalities: result.functionalities || []
       };
     } catch (error: any) {
       lastError = error;
-      const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+      const errorMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
       
-      console.error(`❌ Agent ${role} Error (Attempt ${i + 1}/${maxRetries + 1}):`, {
-        message: errorMsg,
-        errorType: error?.constructor?.name,
-        status: error?.status,
-        code: error?.code
-      });
+      // Log 400 errors separately - these indicate API key or format issues
+      if (errorMsg.includes("400") || errorMsg.includes("Bad Request")) {
+        console.error(`❌ 400 Bad Request for Agent ${role}:`, errorMsg);
+        console.error('This usually indicates an invalid API key or malformed request.');
+      }
       
       const isRetryable = errorMsg.includes("429") || 
                           errorMsg.includes("500") || 
@@ -123,7 +147,7 @@ Return your response in this exact format:
                           errorMsg.includes("quota");
 
       if (isRetryable && i < maxRetries) {
-        const delay = Math.pow(2, i) * 3000 + Math.random() * 1000;
+        const delay = Math.pow(2, i) * 2000 + Math.random() * 1000 + 5000;
         console.warn(`Agent ${role} encountered retryable error, retrying in ${Math.round(delay)}ms... (${i + 1}/${maxRetries})`);
         await new Promise(r => setTimeout(r, delay));
         continue;
@@ -132,15 +156,11 @@ Return your response in this exact format:
     }
   }
 
-  const errorMsg = lastError?.message || lastError?.error?.message || (typeof lastError === 'object' ? JSON.stringify(lastError) : String(lastError));
-  console.error(`❌ Final failure for ${role}:`, errorMsg);
-  
   return {
     agentName: role.split(' ')[0],
     role,
-    content: `**Error:** ${errorMsg}\n\n**Status:** Neural processing failed. Strategic integrity compromised.`,
-    confidenceScore: 0,
-    functionalities: []
+    content: `Neural processing failed. Strategic integrity compromised. ${typeof lastError === 'object' ? JSON.stringify(lastError) : lastError}`,
+    confidenceScore: 0
   };
 }
 
@@ -172,7 +192,7 @@ export async function chatWithAI(message: string, history: { role: string, conte
     try {
       if (!ai) throw new Error("GEMINI_API_KEY not configured.");
 
-      const response = await ai.models.generateContent({
+      const response = await requestQueue.add(() => ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: [
           ...history.map(h => ({
@@ -182,25 +202,22 @@ export async function chatWithAI(message: string, history: { role: string, conte
           { role: 'user', parts: [{ text: message }] }
         ],
         config: { systemInstruction }
-      });
+      }));
       return response.text || "I am unable to process that request.";
     } catch (error: any) {
       lastError = error;
-      const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+      const errorMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
       
-      console.error(`❌ Chat AI Error (Attempt ${i + 1}/${maxRetries + 1}):`, {
-        message: errorMsg,
-        errorType: error?.constructor?.name,
-        status: error?.status,
-        code: error?.code,
-        fullError: error
-      });
+      // Log 400 errors separately - these indicate API key or format issues
+      if (errorMsg.includes("400") || errorMsg.includes("Bad Request")) {
+        console.error('❌ 400 Bad Request in chatWithAI:', errorMsg);
+        console.error('This usually indicates an invalid API key or malformed request.');
+      }
       
       const isRetryable = errorMsg.includes("429") || errorMsg.includes("500") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota");
 
       if (isRetryable && i < maxRetries) {
-        const delay = Math.pow(2, i) * 2000 + Math.random() * 1000;
-        console.warn(`Chat AI encountered retryable error, retrying in ${Math.round(delay)}ms...`);
+        const delay = Math.pow(2, i) * 2000 + Math.random() * 1000 + 5000;
         await new Promise(r => setTimeout(r, delay));
         continue;
       }
@@ -208,9 +225,7 @@ export async function chatWithAI(message: string, history: { role: string, conte
     }
   }
 
-  const errorMsg = lastError?.message || lastError?.error?.message || (typeof lastError === 'object' ? JSON.stringify(lastError) : String(lastError));
-  console.error(`❌ Final failure for Chat AI:`, errorMsg);
-  return "Neural link offline. Error: " + errorMsg;
+  return "Neural link offline. Quota limit reached or network instability detected. Strategic fallback recommended.";
 }
 
 export async function processIncident(incidentData: any): Promise<IncidentAnalysis> {

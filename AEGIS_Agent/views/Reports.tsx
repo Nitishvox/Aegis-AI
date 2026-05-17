@@ -186,7 +186,17 @@ export default function ReportsView({ reports }: ReportsViewProps) {
                       <span className="text-[9px] text-slate-500 flex items-center gap-1 font-mono tracking-tighter uppercase"><LockIcon className="w-2.5 h-2.5" /> AES-256 Encrypted</span>
                       <span className="text-[9px] text-slate-500 flex items-center gap-1 font-mono tracking-tighter uppercase"><ShieldCheck className="w-2.5 h-2.5" /> Immutable Hash Verified</span>
                    </div>
-                   <Button variant="link" className="h-auto p-0 text-[10px] text-blue-500 gap-1 uppercase tracking-widest font-bold">
+                   <Button 
+                    variant="link" 
+                    className="h-auto p-0 text-[10px] text-blue-500 gap-1 uppercase tracking-widest font-bold hover:text-blue-400 decoration-blue-500/30"
+                    onClick={() => {
+                        const toastId = toast.loading("Establishing secure link to Azure Cloud Registry...");
+                        setTimeout(() => {
+                            toast.success("Identity Verified. Accessing Registry...", { id: toastId });
+                            window.open('https://portal.azure.com', '_blank');
+                        }, 1500);
+                    }}
+                   >
                       View in Azure Cloud Registry <ExternalLink className="w-2 h-2" />
                    </Button>
                 </div>

@@ -7,34 +7,52 @@ export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', 'VITE_');
   return {
     plugins: [react(), tailwindcss()],
+    define: {
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
     },
     build: {
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 600,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              // Core UI libraries
+              // Core React
+              if (id.includes('react-dom')) return 'vendor-react-dom';
+              if (id.includes('react-router') || id.includes('remix-run')) return 'vendor-router';
+              if (id.includes('react')) return 'vendor-react-core';
+              
+              // Specific Heavy Libs
               if (id.includes('lucide-react')) return 'vendor-lucide';
               if (id.includes('framer-motion') || id.includes('motion')) return 'vendor-motion';
-              
-              // Heavy processing / visualization libraries
-              if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
+              if (id.includes('recharts')) return 'vendor-recharts';
+              if (id.includes('d3')) return 'vendor-d3';
               if (id.includes('jspdf')) return 'vendor-pdf';
               if (id.includes('html2canvas')) return 'vendor-canvas';
+              if (id.includes('@google/genai')) return 'vendor-gemini';
+              if (id.includes('date-fns')) return 'vendor-date-fns';
               
-              // Content processing
-              if (id.includes('react-markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile')) return 'vendor-markdown';
+              // Radix UI Splitting
+              if (id.includes('@radix-ui')) {
+                const component = id.split('@radix-ui/')[1]?.split('/')[0];
+                return component ? `vendor-radix-${component}` : 'vendor-radix';
+              }
               
-              // React and ecosystem
-              if (id.includes('react')) return 'vendor-react';
+              // Markdown Stack
+              if (id.includes('react-markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile') || id.includes('unist') || id.includes('decode-named-character-reference')) {
+                return 'vendor-markdown-stack';
+              }
               
-              // Remaining common libs
-              return 'vendor-libs';
+              // UI Utils
+              if (id.includes('sonner') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) {
+                return 'vendor-ui-shared';
+              }
+              
+              return 'vendor-misc';
             }
           },
         },
