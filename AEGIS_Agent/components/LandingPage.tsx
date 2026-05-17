@@ -23,7 +23,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-red-600/5 blur-[100px] rounded-full" />
-        <div className="absolute inset-0 opacity-20 brightness-150 mix-blend-overlay" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(15, 23, 42, 0.5) 2px, rgba(15, 23, 42, 0.5) 4px)" }} />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150 mix-blend-overlay" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
       </div>
 
@@ -64,10 +64,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             {/* Added Visual Asset */}
             <div className="mb-10 rounded-2xl overflow-hidden border border-white/10 shadow-2xl group max-w-md relative">
                <img 
-                 src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1000" 
+                 src="/src/assets/images/hero_cyber_hub_1779035310251.png" 
                  alt="Cybersecurity Machine" 
                  className="w-full h-48 object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
-                 referrerPolicy="no-referrer"
                />
                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                <div className="absolute bottom-4 left-4">
@@ -109,10 +108,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
           >
             <div className="col-span-2 aspect-[2/1] bg-slate-900/30 rounded-2xl border border-white/5 flex flex-col justify-end relative overflow-hidden group hover:border-blue-500/30 transition-all">
                <img 
-                  src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200" 
+                  src="/src/assets/images/global_threat_mesh_1779035326990.png" 
                   alt="Global Network" 
                   className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-1000"
-                  referrerPolicy="no-referrer"
                />
                <div className="relative z-10 p-8">
                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
@@ -126,10 +124,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             
             <div className="bg-slate-900/30 rounded-2xl border border-white/5 p-6 aspect-square flex flex-col justify-between group hover:border-red-500/30 transition-all overflow-hidden relative">
                <img 
-                  src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800" 
+                  src="/src/assets/images/neural_core_defense_1779035345816.png" 
                   alt="Neural Core" 
                   className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-700"
-                  referrerPolicy="no-referrer"
                />
                <div className="relative z-10 w-10 h-10 rounded-xl bg-red-500/5 flex items-center justify-center">
                   <Bot size={20} className="text-red-400" />
@@ -182,12 +179,11 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                  </div>
               </div>
               <div className="rounded-3xl overflow-hidden border border-white/5 relative aspect-video group">
-                 <img 
-                    src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1200" 
-                    alt="Datacenter"
-                    className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
-                    referrerPolicy="no-referrer"
-                 />
+               <img 
+                  src="/src/assets/images/secure_datacenter_1779035364367.png" 
+                  alt="Datacenter"
+                  className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
+               />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                  <div className="absolute bottom-8 left-8">
                     <Badge className="bg-slate-800 mb-4 px-3">SOVEREIGN NODE</Badge>
@@ -216,12 +212,12 @@ export function LandingPage({ onLogin }: LandingPageProps) {
            
            <div className="grid md:grid-cols-3 gap-1 px-4 md:px-0">
               {[
-                { title: "Kernel Intercept", desc: "Deep packet inspection at the kernel level for zero-latency monitoring.", color: "blue", img: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?auto=format&fit=crop&q=80&w=600" },
-                { title: "Ghost Protocol", desc: "Invisible honeypots that trap and neutralize scanners effortlessly.", color: "red", img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=600" },
-                { title: "Neural Cleanup", desc: "Automated remediation that resets local state post-incident.", color: "blue", img: "https://images.unsplash.com/photo-1518314916381-77a37c2a49ae?auto=format&fit=crop&q=80&w=600" },
-                { title: "Audit Immutability", desc: "Every action logged to an append-only distributed ledger.", color: "blue", img: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=600" },
-                { title: "Adaptive Firewall", desc: "Dynamic rules that evolve based on adversarial behavior patterns.", color: "red", img: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?auto=format&fit=crop&q=80&w=600" },
-                { title: "Shadow Detection", desc: "Spot lateral movement before attackers reach sensitive datasets.", color: "blue", img: "https://images.unsplash.com/photo-1558494949-ef010cbdcc48?auto=format&fit=crop&q=80&w=600" }
+                { title: "Kernel Intercept", desc: "Deep packet inspection at the kernel level for zero-latency monitoring.", color: "blue", img: "/src/assets/images/cyber_code_pattern_1779035398205.png" },
+                { title: "Ghost Protocol", desc: "Invisible honeypots that trap and neutralize scanners effortlessly.", color: "red", img: "/src/assets/images/neural_core_defense_1779035345816.png" },
+                { title: "Neural Cleanup", desc: "Automated remediation that resets local state post-incident.", color: "blue", img: "/src/assets/images/optical_hardware_glow_1779035415185.png" },
+                { title: "Audit Immutability", desc: "Every action logged to an append-only distributed ledger.", color: "blue", img: "/src/assets/images/secure_datacenter_1779035364367.png" },
+                { title: "Adaptive Firewall", desc: "Dynamic rules that evolve based on adversarial behavior patterns.", color: "red", img: "/src/assets/images/hero_cyber_hub_1779035310251.png" },
+                { title: "Shadow Detection", desc: "Spot lateral movement before attackers reach sensitive datasets.", color: "blue", img: "/src/assets/images/global_threat_mesh_1779035326990.png" }
               ].map((f, i) => (
                 <div key={i} className="group p-8 bg-slate-900/20 border border-white/5 hover:bg-slate-900/40 transition-all flex flex-col gap-4 relative overflow-hidden">
                    <img 
@@ -257,10 +253,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 aspect-[2/1]">
               <div className="md:col-span-2 rounded-3xl overflow-hidden border border-white/5 relative group">
                  <img 
-                    src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1200" 
+                    src="/src/assets/images/hero_cyber_hub_1779035310251.png" 
                     className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
                     alt="Network Hub"
-                    referrerPolicy="no-referrer"
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
                  <div className="absolute bottom-6 left-6">
@@ -269,19 +264,17 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               </div>
               <div className="rounded-3xl overflow-hidden border border-white/5 relative group">
                  <img 
-                    src="https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=800" 
+                    src="/src/assets/images/secure_datacenter_1779035364367.png" 
                     className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110"
                     alt="Security Crypt"
-                    referrerPolicy="no-referrer"
                  />
                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
               </div>
               <div className="rounded-3xl overflow-hidden border border-white/5 relative group">
                  <img 
-                    src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800" 
+                    src="/src/assets/images/cyber_code_pattern_1779035398205.png" 
                     className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
                     alt="Neural Processor"
-                    referrerPolicy="no-referrer"
                  />
                  <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay" />
               </div>
@@ -360,7 +353,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         </div>
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-white/5">
           <p className="text-[9px] font-mono text-slate-600 uppercase tracking-[0.3em]">
-            © 2026 AEGIS DEFENSE SYSTEMS // [EST 04.22.88] // ALL RIGHTS RESERVED
+            © 2026 AEGIS DEFENSE SYSTEMS // [EST 04.22.88] // ALL RIGHTS RESERVED // MMH
           </p>
           <div className="flex gap-8">
              <Terminal size={14} className="text-slate-600 hover:text-blue-400 cursor-pointer transition-colors" />

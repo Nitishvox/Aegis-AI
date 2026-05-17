@@ -454,7 +454,11 @@ export default function App() {
                   <LogOut size={10} /> TERMINATE: {userEmail}
                 </button>
               </div>
-              <div className="italic uppercase">{new Date().toLocaleTimeString()} :: {activeView}_MODE</div>
+              <div className="italic uppercase flex items-center gap-2">
+                <span className="font-bold tracking-widest text-[#00f2ff]">MMH</span>
+                <span className="opacity-30 text-slate-500">|</span>
+                {new Date().toLocaleTimeString()} :: {activeView}_MODE
+              </div>
             </footer>
             <Toaster theme="dark" position="top-right" />
             <ChatBot 

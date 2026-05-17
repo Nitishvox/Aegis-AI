@@ -2,61 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// Validate API Key on load
-if (!GEMINI_API_KEY) {
-  console.error('❌ CRITICAL: VITE_GEMINI_API_KEY environment variable is not loaded!');
-  console.error('Ensure .env file contains: VITE_GEMINI_API_KEY=your_key');
-} else {
-  console.log('✅ VITE_GEMINI_API_KEY loaded successfully (length: ' + GEMINI_API_KEY.length + ' chars)');
-}
-
-// Global request queue to prevent concurrent API calls
-class RequestQueue {
-  private queue: (() => Promise<any>)[] = [];
-  private isProcessing = false;
-  private readonly MIN_DELAY_MS = 2500; // 2.5 seconds between requests
-  private lastRequestTime = 0;
-
-  async add<T>(fn: () => Promise<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
-      this.queue.push(async () => {
-        try {
-          const result = await fn();
-          resolve(result);
-        } catch (error) {
-          reject(error);
-        }
-      });
-      this.process();
-    });
-  }
-
-  private async process() {
-    if (this.isProcessing || this.queue.length === 0) return;
-    
-    this.isProcessing = true;
-    
-    while (this.queue.length > 0) {
-      const now = Date.now();
-      const timeSinceLastRequest = now - this.lastRequestTime;
-      
-      if (timeSinceLastRequest < this.MIN_DELAY_MS) {
-        await new Promise(r => setTimeout(r, this.MIN_DELAY_MS - timeSinceLastRequest));
-      }
-      
-      const request = this.queue.shift();
-      if (request) {
-        this.lastRequestTime = Date.now();
-        await request();
-      }
-    }
-    
-    this.isProcessing = false;
-  }
-}
-
-const requestQueue = new RequestQueue();
-
 export interface AgentResponse {
   agentName: string;
   role: string;
@@ -74,14 +19,7 @@ export interface IncidentAnalysis {
   overallThreatLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 }
 
-const ai = GEMINI_API_KEY && GEMINI_API_KEY.length > 20 ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
-
-if (!ai) {
-  console.error('❌ GoogleGenAI instance not initialized! API Key status:', {
-    exists: !!GEMINI_API_KEY,
-    length: GEMINI_API_KEY?.length || 0
-  });
-}
+const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 async function runAgent(role: string, mission: string, context: string): Promise<AgentResponse> {
   const prompt = `
@@ -111,13 +49,13 @@ async function runAgent(role: string, mission: string, context: string): Promise
     try {
       if (!ai) throw new Error("GEMINI_API_KEY not configured.");
 
-      const response = await requestQueue.add(() => ai.models.generateContent({
-        model: "gemini-2.5-flash",
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash", // High-performance neural model
         contents: prompt,
         config: {
           responseMimeType: "application/json"
         }
-      }));
+      });
 
       const resultText = response.text || "{}";
       const jsonContent = resultText.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
@@ -134,12 +72,6 @@ async function runAgent(role: string, mission: string, context: string): Promise
       lastError = error;
       const errorMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
       
-      // Log 400 errors separately - these indicate API key or format issues
-      if (errorMsg.includes("400") || errorMsg.includes("Bad Request")) {
-        console.error(`❌ 400 Bad Request for Agent ${role}:`, errorMsg);
-        console.error('This usually indicates an invalid API key or malformed request.');
-      }
-      
       const isRetryable = errorMsg.includes("429") || 
                           errorMsg.includes("500") || 
                           errorMsg.includes("INTERNAL") || 
@@ -147,7 +79,7 @@ async function runAgent(role: string, mission: string, context: string): Promise
                           errorMsg.includes("quota");
 
       if (isRetryable && i < maxRetries) {
-        const delay = Math.pow(2, i) * 2000 + Math.random() * 1000 + 5000;
+        const delay = Math.pow(2, i) * 3000 + Math.random() * 1000;
         console.warn(`Agent ${role} encountered retryable error, retrying in ${Math.round(delay)}ms... (${i + 1}/${maxRetries})`);
         await new Promise(r => setTimeout(r, delay));
         continue;
@@ -192,8 +124,8 @@ export async function chatWithAI(message: string, history: { role: string, conte
     try {
       if (!ai) throw new Error("GEMINI_API_KEY not configured.");
 
-      const response = await requestQueue.add(() => ai.models.generateContent({
-        model: "gemini-2.5-flash",
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash", // Using 2.0 Flash for optimized SOC command interface
         contents: [
           ...history.map(h => ({
             role: h.role === 'assistant' ? 'model' : 'user',
@@ -202,22 +134,15 @@ export async function chatWithAI(message: string, history: { role: string, conte
           { role: 'user', parts: [{ text: message }] }
         ],
         config: { systemInstruction }
-      }));
+      });
       return response.text || "I am unable to process that request.";
     } catch (error: any) {
       lastError = error;
       const errorMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
-      
-      // Log 400 errors separately - these indicate API key or format issues
-      if (errorMsg.includes("400") || errorMsg.includes("Bad Request")) {
-        console.error('❌ 400 Bad Request in chatWithAI:', errorMsg);
-        console.error('This usually indicates an invalid API key or malformed request.');
-      }
-      
       const isRetryable = errorMsg.includes("429") || errorMsg.includes("500") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota");
 
       if (isRetryable && i < maxRetries) {
-        const delay = Math.pow(2, i) * 2000 + Math.random() * 1000 + 5000;
+        const delay = Math.pow(2, i) * 2000 + Math.random() * 1000;
         await new Promise(r => setTimeout(r, delay));
         continue;
       }

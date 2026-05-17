@@ -122,7 +122,7 @@ export function NetworkTopology({ activeAlert }: { activeAlert?: boolean }) {
     { id: 'app', label: 'APP_CORE', x: 50, y: 50, status: activeAlert ? 'critical' : 'stable', icon: 'shield' },
     { id: 'cache', label: 'CACHE_H0', x: 80, y: 50, status: 'stable', icon: 'zap' },
     { id: 'auth', label: 'AUTH_0', x: 50, y: 85, status: 'stable', icon: 'lock' },
-  ].filter(n => n && n.x !== undefined && n.y !== undefined);
+  ];
 
   const connections = [
     ['gw', 'app'], ['app', 'db'], ['app', 'cache'], ['app', 'auth']
@@ -159,9 +159,8 @@ export function NetworkTopology({ activeAlert }: { activeAlert?: boolean }) {
 
         {/* Connection Lines */}
         {connections.map(([fromId, toId], i) => {
-          const from = nodes.find(n => n.id === fromId);
-          const to = nodes.find(n => n.id === toId);
-          if (!from || !to || from.x === undefined || from.y === undefined || to.x === undefined || to.y === undefined) return null;
+          const from = nodes.find(n => n.id === fromId)!;
+          const to = nodes.find(n => n.id === toId)!;
           const isStressed = activeAlert && (from.id === 'app' || to.id === 'app' || from.id === 'db' || to.id === 'db');
           
           return (
@@ -197,7 +196,6 @@ export function NetworkTopology({ activeAlert }: { activeAlert?: boolean }) {
         
         {/* Nodes */}
         {nodes.map((node) => {
-          if (!node || node.x === undefined || node.y === undefined) return null;
           const isCritical = node.status === 'critical';
           const isWarning = node.status === 'warning';
           

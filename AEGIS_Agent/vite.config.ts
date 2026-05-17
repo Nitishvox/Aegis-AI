@@ -4,11 +4,11 @@ import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', 'VITE_');
+  const env = loadEnv(mode, '.', '');
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     resolve: {
       alias: {
@@ -21,38 +21,41 @@ export default defineConfig(({mode}) => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              // Core React
-              if (id.includes('react-dom')) return 'vendor-react-dom';
-              if (id.includes('react-router') || id.includes('remix-run')) return 'vendor-router';
-              if (id.includes('react')) return 'vendor-react-core';
+              // Core React Bundle (Must be stable)
+              if (
+                id.includes('react') || 
+                id.includes('react-dom') || 
+                id.includes('scheduler') ||
+                id.includes('react-router') ||
+                id.includes('remix-run') ||
+                id.includes('use-sync-external-store')
+              ) {
+                return 'vendor-react';
+              }
               
-              // Specific Heavy Libs
+              // Heavy Visualization & Processing
+              if (id.includes('recharts') || id.includes('d3')) return 'vendor-viz';
+              if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-export';
+              if (id.includes('framer-motion') || id.includes('motion')) return 'vendor-animation';
+              
+              // UI Framework Components
               if (id.includes('lucide-react')) return 'vendor-lucide';
-              if (id.includes('framer-motion') || id.includes('motion')) return 'vendor-motion';
-              if (id.includes('recharts')) return 'vendor-recharts';
-              if (id.includes('d3')) return 'vendor-d3';
-              if (id.includes('jspdf')) return 'vendor-pdf';
-              if (id.includes('html2canvas')) return 'vendor-canvas';
-              if (id.includes('@google/genai')) return 'vendor-gemini';
-              if (id.includes('date-fns')) return 'vendor-date-fns';
+              if (id.includes('@radix-ui')) return 'vendor-radix';
               
-              // Radix UI Splitting
-              if (id.includes('@radix-ui')) {
-                const component = id.split('@radix-ui/')[1]?.split('/')[0];
-                return component ? `vendor-radix-${component}` : 'vendor-radix';
+              // AI & APIs
+              if (id.includes('@google/genai')) return 'vendor-ai';
+              
+              // Content Stack
+              if (id.includes('markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile')) {
+                return 'vendor-content';
               }
               
-              // Markdown Stack
-              if (id.includes('react-markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile') || id.includes('unist') || id.includes('decode-named-character-reference')) {
-                return 'vendor-markdown-stack';
+              // Common Utilities
+              if (id.includes('date-fns') || id.includes('sonner') || id.includes('clsx') || id.includes('tailwind-merge')) {
+                return 'vendor-utils';
               }
               
-              // UI Utils
-              if (id.includes('sonner') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) {
-                return 'vendor-ui-shared';
-              }
-              
-              return 'vendor-misc';
+              return 'vendor-others';
             }
           },
         },
