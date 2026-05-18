@@ -16,57 +16,20 @@ export default defineConfig(({mode}) => {
       },
     },
     build: {
-      chunkSizeWarningLimit: 600,
-      sourcemap: false,
-      minify: 'esbuild',
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              // Core React Bundle (Must be stable)
-              if (
-                id.includes('react/') || 
-                id.includes('react-dom') || 
-                id.includes('scheduler') ||
-                id.includes('react-router') ||
-                id.includes('remix-run') ||
-                id.includes('use-sync-external-store')
-              ) {
-                return 'vendor-react';
-              }
-              
-              // Heavy Visualization & Processing (isolated)
-              if (id.includes('recharts')) return 'vendor-recharts';
-              if (id.includes('d3/')) return 'vendor-d3';
-              if (id.includes('jspdf')) return 'vendor-jspdf';
-              if (id.includes('html2canvas')) return 'vendor-html2canvas';
-              if (id.includes('framer-motion')) return 'vendor-framer';
-              if (id.includes('motion')) return 'vendor-motion';
-              
-              // UI Framework Components
-              if (id.includes('lucide-react')) return 'vendor-lucide';
-              if (id.includes('@radix-ui')) return 'vendor-radix';
-              
-              // AI & APIs
+              // Large, independent library groups
+              if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
+              if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-export';
               if (id.includes('@google/genai')) return 'vendor-ai';
-              if (id.includes('groq')) return 'vendor-groq';
               
-              // Content Stack - Keep all markdown libs together to avoid circular deps
-              if (id.includes('markdown') || id.includes('remark') || id.includes('micromark') || 
-                  id.includes('mdast') || id.includes('vfile') || id.includes('unified') || 
-                  id.includes('decode-named-character-reference')) {
-                return 'vendor-markdown';
-              }
-              
-              // Styling & Utilities
-              if (id.includes('tailwindcss') || id.includes('autoprefixer')) return 'vendor-tailwind';
-              if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-classnames';
-              if (id.includes('date-fns')) return 'vendor-datefns';
-              if (id.includes('sonner')) return 'vendor-sonner';
-              if (id.includes('next-themes')) return 'vendor-themes';
-              
-              // Everything else (minimal fallback)
-              return 'vendor-others';
+              // Group ALL other dependencies (React, Radix, Motion, Markdown, etc.) into one stable chunk.
+              // Keeping them together prevents "undefined hooks" errors caused by splitting 
+              // the React ecosystem into incompatible chunks.
+              return 'vendor';
             }
           },
         },
