@@ -23,7 +23,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-red-600/5 blur-[100px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-blue-500/5 opacity-20 brightness-150 mix-blend-overlay" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
       </div>
 
@@ -139,10 +139,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
             <div className="bg-slate-950/40 rounded-2xl border border-blue-500/10 p-6 aspect-square flex flex-col justify-between group hover:border-blue-500/40 transition-all shadow-[0_0_50px_rgba(37,99,235,0.05)] overflow-hidden relative">
                <img 
-                  src="https://images.unsplash.com/photo-1510511459019-5dda7724fd87?auto=format&fit=crop&q=80&w=800" 
+                  src="/src/assets/images/optical_hardware_glow_1779035415185.png" 
                   alt="Immutable Ledger" 
                   className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-30 transition-opacity duration-700"
-                  referrerPolicy="no-referrer"
                />
                <div className="relative z-10 w-10 h-10 rounded-xl bg-blue-500/5 flex items-center justify-center">
                   <Database size={20} className="text-blue-400" />
@@ -166,12 +165,11 @@ export function LandingPage({ onLogin }: LandingPageProps) {
            
            <div className="grid md:grid-cols-2 gap-8">
               <div className="rounded-3xl overflow-hidden border border-white/5 relative aspect-video group">
-                 <img 
-                    src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1200" 
-                    alt="Ops Center"
-                    className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100"
-                    referrerPolicy="no-referrer"
-                 />
+               <img 
+                  src="/src/assets/images/hero_cyber_hub_1779035310251.png" 
+                  alt="Ops Center"
+                  className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100"
+               />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                  <div className="absolute bottom-8 left-8">
                     <Badge className="bg-blue-600 mb-4 px-3">PRIMARY HUB</Badge>
