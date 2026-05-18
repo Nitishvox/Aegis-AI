@@ -22,6 +22,18 @@ export default defineConfig(({mode}) => {
       terserOptions: {
         compress: {
           drop_console: true,
+          passes: 2,
+          pure_funcs: null,
+          reduce_vars: false,
+          hoist_props: false,
+          side_effects: true,
+        },
+        mangle: {
+          keep_fnames: true,
+          keep_classnames: true,
+        },
+        format: {
+          comments: false,
         },
       },
       rollupOptions: {
@@ -30,7 +42,7 @@ export default defineConfig(({mode}) => {
             if (id.includes('node_modules')) {
               // Core React Bundle (Must be stable)
               if (
-                id.includes('react') || 
+                id.includes('react/') || 
                 id.includes('react-dom') || 
                 id.includes('scheduler') ||
                 id.includes('react-router') ||
@@ -40,10 +52,13 @@ export default defineConfig(({mode}) => {
                 return 'vendor-react';
               }
               
-              // Heavy Visualization & Processing
-              if (id.includes('recharts') || id.includes('d3')) return 'vendor-viz';
-              if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-export';
-              if (id.includes('framer-motion') || id.includes('motion')) return 'vendor-animation';
+              // Heavy Visualization & Processing (isolated)
+              if (id.includes('recharts')) return 'vendor-recharts';
+              if (id.includes('d3/')) return 'vendor-d3';
+              if (id.includes('jspdf')) return 'vendor-jspdf';
+              if (id.includes('html2canvas')) return 'vendor-html2canvas';
+              if (id.includes('framer-motion')) return 'vendor-framer';
+              if (id.includes('motion')) return 'vendor-motion';
               
               // UI Framework Components
               if (id.includes('lucide-react')) return 'vendor-lucide';
@@ -51,19 +66,21 @@ export default defineConfig(({mode}) => {
               
               // AI & APIs
               if (id.includes('@google/genai')) return 'vendor-ai';
+              if (id.includes('groq')) return 'vendor-groq';
               
-              // Content Stack (includes shared utilities)
-              if (id.includes('markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile') || 
-                  id.includes('unified') || id.includes('decode-named-character-reference')) {
-                return 'vendor-content';
+              // Content Stack (markdown ecosystem)
+              if (id.includes('react-markdown')) return 'vendor-react-markdown';
+              if (id.includes('remark') || id.includes('micromark') || id.includes('mdast') || 
+                  id.includes('vfile') || id.includes('unified') || id.includes('decode-named-character-reference')) {
+                return 'vendor-markdown-ecosystem';
               }
               
-              // Common Utilities - Group together to avoid circular deps
-              if (id.includes('date-fns') || id.includes('sonner') || 
-                  id.includes('clsx') || id.includes('tailwind-merge') ||
-                  id.includes('next-themes') || id.includes('use-callback-ref')) {
-                return 'vendor-utils';
-              }
+              // Styling & Utilities
+              if (id.includes('tailwindcss') || id.includes('autoprefixer')) return 'vendor-tailwind';
+              if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-classnames';
+              if (id.includes('date-fns')) return 'vendor-datefns';
+              if (id.includes('sonner')) return 'vendor-sonner';
+              if (id.includes('next-themes')) return 'vendor-themes';
               
               // Everything else (minimal fallback)
               return 'vendor-others';
