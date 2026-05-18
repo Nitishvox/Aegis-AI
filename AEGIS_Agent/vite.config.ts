@@ -17,6 +17,13 @@ export default defineConfig(({mode}) => {
     },
     build: {
       chunkSizeWarningLimit: 600,
+      sourcemap: false,
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+        },
+      },
       rollupOptions: {
         output: {
           manualChunks(id) {
@@ -50,10 +57,10 @@ export default defineConfig(({mode}) => {
                 return 'vendor-content';
               }
               
-              // Common Utilities
-              if (id.includes('date-fns') || id.includes('sonner') || id.includes('clsx') || id.includes('tailwind-merge')) {
-                return 'vendor-utils';
-              }
+              // Common Utilities - Keep separate to avoid circular deps
+              if (id.includes('date-fns')) return 'vendor-datefns';
+              if (id.includes('sonner')) return 'vendor-sonner';
+              if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-css';
               
               return 'vendor-others';
             }
