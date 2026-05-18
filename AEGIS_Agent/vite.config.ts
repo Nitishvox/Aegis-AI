@@ -52,16 +52,20 @@ export default defineConfig(({mode}) => {
               // AI & APIs
               if (id.includes('@google/genai')) return 'vendor-ai';
               
-              // Content Stack
-              if (id.includes('markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile')) {
+              // Content Stack (includes shared utilities)
+              if (id.includes('markdown') || id.includes('remark') || id.includes('micromark') || id.includes('mdast') || id.includes('vfile') || 
+                  id.includes('unified') || id.includes('decode-named-character-reference')) {
                 return 'vendor-content';
               }
               
-              // Common Utilities - Keep separate to avoid circular deps
-              if (id.includes('date-fns')) return 'vendor-datefns';
-              if (id.includes('sonner')) return 'vendor-sonner';
-              if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-css';
+              // Common Utilities - Group together to avoid circular deps
+              if (id.includes('date-fns') || id.includes('sonner') || 
+                  id.includes('clsx') || id.includes('tailwind-merge') ||
+                  id.includes('next-themes') || id.includes('use-callback-ref')) {
+                return 'vendor-utils';
+              }
               
+              // Everything else (minimal fallback)
               return 'vendor-others';
             }
           },
