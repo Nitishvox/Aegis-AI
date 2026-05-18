@@ -18,24 +18,7 @@ export default defineConfig(({mode}) => {
     build: {
       chunkSizeWarningLimit: 600,
       sourcemap: false,
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          passes: 2,
-          pure_funcs: null,
-          reduce_vars: false,
-          hoist_props: false,
-          side_effects: true,
-        },
-        mangle: {
-          keep_fnames: true,
-          keep_classnames: true,
-        },
-        format: {
-          comments: false,
-        },
-      },
+      minify: 'esbuild',
       rollupOptions: {
         output: {
           manualChunks(id) {
@@ -68,11 +51,11 @@ export default defineConfig(({mode}) => {
               if (id.includes('@google/genai')) return 'vendor-ai';
               if (id.includes('groq')) return 'vendor-groq';
               
-              // Content Stack (markdown ecosystem)
-              if (id.includes('react-markdown')) return 'vendor-react-markdown';
-              if (id.includes('remark') || id.includes('micromark') || id.includes('mdast') || 
-                  id.includes('vfile') || id.includes('unified') || id.includes('decode-named-character-reference')) {
-                return 'vendor-markdown-ecosystem';
+              // Content Stack - Keep all markdown libs together to avoid circular deps
+              if (id.includes('markdown') || id.includes('remark') || id.includes('micromark') || 
+                  id.includes('mdast') || id.includes('vfile') || id.includes('unified') || 
+                  id.includes('decode-named-character-reference')) {
+                return 'vendor-markdown';
               }
               
               // Styling & Utilities
