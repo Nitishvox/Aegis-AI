@@ -1,4 +1,4 @@
-"""# AEGIS DEFENSE SYSTEMS 🛡️
+# AEGIS DEFENSE SYSTEMS 🛡️
 ### Next-Generation Cybersecurity Command Interface & SOC Dashboard
 
 AEGIS is a production-ready, high-fidelity Security Operations Center (SOC) Interface that bridges cinematic front-end engineering with intelligent, AI-powered system remediation. Built with a bespoke **"Cold Blue & Charcoal"** aesthetic, it provides an immersive, active-defense visualization environment utilizing real-time event simulations and sovereign node monitoring.
